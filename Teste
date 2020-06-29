@@ -1,0 +1,53 @@
+•	Apontamentos BX:
+o	Apontamentos serão puxados apenas pela API (tanto no processamento batch quanto nas requalificações)
+o	Materialidade dos apontamentos serão inputs do motor
+o	Visão CNPJ, visão Sócios e Visão Grupo Econômico
+•	CNPJs-recém constituídas (fora da base do Bureau):
+o	Mapear com o time do Bureau (Elisete/Gaspar) como integrar a consulta forçada à SERPRO (Radar Bureau).
+o	Definir “o que deve ocorrer nestes casos”:
+	Inclusão do CNPJ no Bureau
+	Consulta ao motor, com “flag especial” (exemplo: “input_cnpj_novo”=1  Regra no motor segue caminho A, senão caminho B)
+	Rodar regra como se fosse uma requalificação (mesmo com inputs a menos do que o normal. Exemplo: dos 4 tipos de entradas que teremos – base ED9, View Customizada no AI6, API de apontamentos BX e respostas de requalificação – pode ser que o CNPJ tenha apenas os dados de Apontamentos BX. No mês seguinte, este CNPJ já estaria no Bureau em tempo de carregamento de arquivo do ED9 e passaria a ter todos os dados)
+•	Definir quais são os “defaults” de cada campo.
+o	Exemplo: EMP4, Porte P, Não Target, Sem restritivo. 
+o	Precisamos ter flexibilidade para alterar o default (no motor, por exemplo) para os casos não encontrados na base (não carregados)
+•	Já correntista: tomar cuidado com “como isso será tratado”:
+o	Vamos manter a regra atual? (some tudo e aparecem os dados no cabeçalho)
+o	Vamos embutir a consulta de correntista no serviço que entrega os dados ao motor? Por exemplo:
+1.	Serviço busca dados da base do ED9, da View Customizada no AI6, API de Apontamentos BX, Respostas de Requalificação + “consulta de correntista” (mesma consulta atual, com segmento da conta)
+2.	Entrega todos esses dados como Input no Bureau
+3.	Regra parametrizada dentro do motor para, neste caso, ter um dos outputs como “flag_correntista”
+4.	Flag_correntista impacta Status, Segmento, etc (igual hoje)
+5.	Flag_correntista impacta Ofertas (igual hoje, mas não por regra hard code, mas pela carga de oferta – sem oferta se “flag_correntista=1”)
+•	Criação da View Customizada no AI6
+o	Esboçar “metadados” antes de começar as mexer nas bases, com base na lista de variáveis mapeadas
+•	Para algumas bases/variáveis isso será mais simples e vai direcionar a criação de query, pois os campos já estão dados (natureza jurídica, optante simei, etc)
+•	Para outras, esse exercício vai direcionar a análise, mas a query final vai depender dos campos que constam na base (sinais vitais, fluxo, relacionamentos com o banco)
+•	Fechar a lista de documentos:
+o	Lista inicial já está bem completa. É importante bater o olho na lista de documentos do DI4 e ver se “nos inspiramos” e lembramos de alguma coisa.
+o	Garantir que vai entrar algo como “Outros documentos associados à requalificação de prospects”
+•	Nomenclaturas da NVP:
+o	Fechar as “palavrinhas” que vão em cada lugar com Valdir, Diviziis, Juliana Valerio (Franquia EMP23) e Camila Amato (Franquia EMP4)
+o	Tudo que for hard code na tela precisa sem bem pensado.
+•	Lista de Bancos:
+o	Hoje, de-para de Cod-Banco e Nome-Banco está em um dos perfis do GH (checar qual perfil)
+o	E se carregássemos, neste caso específico, o nome do banco (string), ao invés do código? (considerando que a partir de agora teremos a carga no Hadoop)
+•	Lista de cargos:
+o	Entender como ter “lista viva” de cargos, para liberar por Checkbox
+o	Deixar claro como funcionará no caso de uma configuração (exemplo: NVP-EMP2) estar “inativa” ou estar “Ativa”, mas ser acessada por um carga “sem check”:
+•	Aba de requalificação será exibida, mas somente trará conteúdo do lado esquerdo (perfil da empresa, última requalificação e histórico de requalificações). A caixinha do lado direito (Requalficação, sem si) não será exibida.
+•	Como área de negócios checa “quais as perguntas/respostas/documentos disponíveis na NVP”?
+o	Painel de Serviços
+o	Decisão:
+•	Opção A) usuários de quaisquer áreas conseguem sempre ver (independentemente do cargo), mas botão enviar está sempre desabilitado – opção ideal caso queiramos que o Painel de Serviços continuem com papel “somente leitura”
+•	Opção B) usuários de quaisquer áreas conseguem ver (desde que tenham um dos cargo permitidos na parametrização) e botão enviar está habilitado – opção ideal caso tenhamos em mente que alguma área opere a requalificação (backoffice, central, etc)
+o	Pessoalmente, prefiro a opção A, mas acho que vale checar este ponto com o Diviziis.
+•	Cancelamento de requalificações:
+o	De que forma podemos cancelar requalificações (tanto aprovadas quanto pendentes) em lote? 
+o	Temos que fazer de forma que não fique uma gambiarra. Tem que ser, de fato, um “cancelar requalificações X, Y e Z”
+Conjuntos de inputs do Motor
+•	input_psp_XXX – dados carregados na base de CNPJs nova (Hadoop)
+•	input_view_XXX – dados obtidos através da View do AI6
+•	input_bx_XXX – dados de apontamentos cadastrais obtidos através da API de apontamentos cadastrais do BX (3 tipos: do CNPJ, dos sócios e do grupo econômico)
+•	input_cc_XXX – dados de correntistas (sim/não, segmento, etc)
+•	input_req_XXX – dados de requalificação
